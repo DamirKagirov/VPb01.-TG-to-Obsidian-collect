@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"/><title>Exported Data</title></head>
+<body>
+<div class="page_wrap">
+  <div class="page_body chat_page">
+    <div class="history">
+
+      <div class="message service" id="message-1">
+        <div class="body details">1 January 2026</div>
+      </div>
+
+      <div class="message default clearfix" id="message100">
+        <div class="body">
+          <div class="pull_right date details" title="01.01.2026 10:00:00 GMT+03:00">10:00</div>
+          <div class="from_name">Тестовый Пользователь</div>
+          <div class="text">Первая строка<br/>Вторая с <a href="https://example.org/page">ссылкой</a> и <code>код</code><br/><pre>a = 1<br/>b = 2</pre><br/><blockquote>цитата<br/>вторая</blockquote><br/>Скрыто: <span class="spoiler hidden"><span aria-hidden="true">секрет</span></span></div>
+        </div>
+      </div>
+
+      <div class="message default clearfix joined" id="message101">
+        <div class="body">
+          <div class="pull_right date details" title="01.01.2026 10:00:05 GMT+03:00">10:00</div>
+          <div class="text">Продолжение без автора</div>
+        </div>
+      </div>
+
+      <div class="message default clearfix" id="message102">
+        <div class="body">
+          <div class="pull_right date details" title="01.01.2026 10:05:00 GMT+03:00">10:05</div>
+          <div class="from_name">Тестовый Пользователь</div>
+          <div class="reply_to details">In reply to <a href="#go_to_message100" onclick="return GoToMessage(100)">this message</a></div>
+          <div class="text">Ответ на первое сообщение</div>
+        </div>
+      </div>
+
+      <div class="message default clearfix" id="message103">
+        <div class="body">
+          <div class="pull_right date details" title="01.01.2026 10:10:00 GMT+03:00">10:10</div>
+          <div class="from_name">Тестовый Пользователь</div>
+          <div class="pull_left forwarded userpic_wrap"><div class="initials">A</div></div>
+          <div class="forwarded body">
+            <div class="from_name">Автор Оригинала <span class="date details" title="15.12.2025 09:30:00 GMT+03:00"> 15.12.2025 09:30:00</span></div>
+            <div class="text">Текст оригинала с <b>жирным</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="message default clearfix" id="message104">
+        <div class="body">
+          <div class="pull_right date details" title="01.01.2026 10:15:00 GMT+03:00">10:15</div>
+          <div class="from_name">Тестовый Пользователь</div>
+          <div class="text"><a href="" onclick='return ShowBotCommand("start")'>/start</a> и обычный текст</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

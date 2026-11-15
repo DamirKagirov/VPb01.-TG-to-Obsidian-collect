@@ -27,8 +27,9 @@ def test_help_lists_implemented_commands_only() -> None:
     assert result.exit_code == 0
     assert "doctor" in result.stdout
     assert "version" in result.stdout
+    assert "import-html" in result.stdout
     # Команды следующих этапов ещё не существуют — заглушек быть не должно.
-    assert "import-html" not in result.stdout
+    assert "reconcile" not in result.stdout
 
 
 def test_doctor_succeeds_with_warnings_only() -> None:

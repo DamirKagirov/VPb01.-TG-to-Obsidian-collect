@@ -17,7 +17,7 @@ S3-совместимое хранилище и следит за тем, что
 | 0 | Каркас: пакет, конфигурация, логи, CLI, Docker, тесты | **выполнен** |
 | 1 | Аудит HTML-экспорта, ADR, список открытых вопросов | **выполнен** |
 | 2 | Спайки: S3 ↔ Obsidian, условные записи, offset, ID-сопоставление | **выполнен** (Obsidian и live Telegram — не проверены) |
-| 3 | Вертикальный срез: исходник → заметка с `kb_id` → S3 | не начат |
+| 3 | Вертикальный срез: исходник → заметка с `kb_id` → S3 | **срез выполнен**, ожидает проверки в Obsidian |
 | 4 | Пакетный импорт, вложения, очередь и retries | не начат |
 | 5 | Рубрикатор, группировка, LLM-обогащение, `Review/` | не начат |
 | 6 | Сверка S3, перемещения, `missing`, конфликты `kb_id` | не начат |
@@ -42,6 +42,7 @@ S3-совместимое хранилище и следит за тем, что
 
 .\.venv\Scripts\kbcollector.exe version
 .\.venv\Scripts\kbcollector.exe doctor           # проверки без обращения к внешним сервисам
+.\.venv\Scripts\uv.exe run alembic upgrade head  # схема БД
 .\.venv\Scripts\pytest.exe -q
 ```
 
@@ -76,12 +77,22 @@ cp .env.example .env
 |---|---|
 | `kbcollector version` | версия приложения и Python |
 | `kbcollector doctor [--json] [--quiet]` | проверка конфигурации, каталогов, SQLite, часового пояса |
+| `kbcollector import-html [--dry-run] [--limit N] [--path DIR] [--target-prefix P]` | импорт экспорта Telegram в vault и БД |
 
 Код возврата `doctor`: `0` — нет ошибок (предупреждения допустимы), `1` — есть проваленные
 проверки, `2` — некорректная конфигурация.
 
-Команды следующих этапов (`run`, `import-html`, `status`, `retry`, `reprocess`, `reconcile`,
-`proposals`, `restore`, `backup`) появятся вместе с реализацией; их точный синтаксис будет
+Примеры:
+
+```powershell
+uv run alembic upgrade head                    # схема БД
+uv run kbcollector import-html --dry-run       # разбор без записи
+uv run kbcollector import-html --limit 10      # пробные 10 сообщений
+uv run kbcollector import-html                 # весь экспорт
+```
+
+Команды следующих этапов (`run`, `status`, `retry`, `reprocess`, `reconcile`, `proposals`,
+`restore`, `backup`) появятся вместе с реализацией; их точный синтаксис будет
 задокументирован здесь.
 
 ## Docker
@@ -103,11 +114,19 @@ docker compose run --rm kbcollector doctor
 
 ```
 src/kbcollector/
-├── cli/            # Typer-команды
+├── cli/            # Typer-команды (version, doctor, import-html)
 ├── config.py       # pydantic-settings, секреты как SecretStr
 ├── diagnostics/    # preflight-проверки (без сети)
+├── domain/         # модели, идентификаторы, безопасные имена
+├── ingestion/      # HTML-экспорт: discovery, parser, text
+├── markdown/       # front matter, рендеринг заметки, очистка
+├── db/             # модели SQLAlchemy, движок, миграции Alembic
+├── archive/        # неизменяемый архив исходников
+├── publication/    # раскладка vault, S3 с условными записями
+├── services/       # сценарии (import_html)
 └── logging.py      # structlog + маскирование секретов
-tests/unit/         # конфигурация, логи, CLI, preflight
+tests/unit/         # конфигурация, парсер, рендеринг, имена
+tests/integration/  # импорт → БД → S3 на фейковом клиенте
 docs/               # разбор ТЗ, ADR, отчёты о совместимости
 config/             # рубрикатор и версионируемые промпты (появятся на Этапе 5)
 ```
