@@ -13,6 +13,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -29,16 +30,28 @@ def _mask(text: str) -> str:
     return _TOKEN_RE.sub("<redacted>", text)
 
 
-def _call(client: httpx.Client, method: str) -> dict[str, Any]:
-    response = client.post(method)
+def _call(client: httpx.Client, method: str, **params: Any) -> Any:  # ответы Bot API разной формы
+    response = client.post(method, json=params or None)
     payload = response.json()
     if not payload.get("ok"):
         raise RuntimeError(f"{method}: {payload.get('description', 'unknown error')}")
-    result = payload.get("result")
-    return result if isinstance(result, dict) else {"result": result}
+    return payload.get("result")
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--peek",
+        action="store_true",
+        help="показать chat_id из последнего update (update НЕ подтверждается)",
+    )
+    parser.add_argument(
+        "--chats",
+        action="store_true",
+        help="запросить getChat для id из allowlist",
+    )
+    args = parser.parse_args()
+
     settings = Settings()
     if settings.telegram_bot_token is None:
         print("KBC_TELEGRAM_BOT_TOKEN не задан")
@@ -48,9 +61,32 @@ def main() -> int:
     base_url = f"https://api.telegram.org/bot{token}"
 
     try:
-        with httpx.Client(base_url=base_url, timeout=20) as client:
+        with httpx.Client(base_url=base_url, timeout=25) as client:
             me = _call(client, "getMe")
             webhook = _call(client, "getWebhookInfo")
+            peeked = (
+                _call(client, "getUpdates", offset=-1, limit=1, timeout=0) if args.peek else None
+            )
+            chats: list[dict[str, Any]] = []
+            if args.chats:
+                for chat_id in {
+                    *settings.telegram_allowed_chat_ids,
+                    *settings.telegram_allowed_user_ids,
+                }:
+                    try:
+                        info = _call(client, "getChat", chat_id=chat_id)
+                        chats.append(
+                            {
+                                "requested_id": chat_id,
+                                "type": info.get("type"),
+                                "id": info.get("id"),
+                                "title": info.get("title"),
+                                "username": info.get("username"),
+                                "first_name": info.get("first_name"),
+                            }
+                        )
+                    except RuntimeError as exc:
+                        chats.append({"requested_id": chat_id, "error": _mask(str(exc))})
     except (httpx.HTTPError, RuntimeError) as exc:
         print(f"Ошибка Bot API: {_mask(str(exc))}")
         return 1
@@ -77,6 +113,38 @@ def main() -> int:
         },
         "polling_timeout": settings.telegram_poll_timeout,
     }
+
+    if peeked is not None:
+        if not peeked:
+            report["peek"] = {
+                "updates": 0,
+                "hint": "pending updates нет: отправьте боту сообщение и повторите",
+            }
+        else:
+            update = peeked[-1]
+            message = (
+                update.get("message")
+                or update.get("edited_message")
+                or update.get("channel_post")
+                or {}
+            )
+            chat = message.get("chat", {})
+            sender = message.get("from", {})
+            report["peek"] = {
+                "update_id": update.get("update_id"),
+                "update_keys": sorted(update.keys()),
+                "chat_id": chat.get("id"),
+                "chat_type": chat.get("type"),
+                "chat_title": chat.get("title") or chat.get("first_name"),
+                "from_id": sender.get("id"),
+                "message_id": message.get("message_id"),
+                "date": message.get("date"),
+                "has_text": bool(message.get("text") or message.get("caption")),
+            }
+
+    if chats:
+        report["chats"] = chats
+
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
     if report["webhook"]["has_webhook"]:

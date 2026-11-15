@@ -21,10 +21,10 @@ services:
 
     volumes:
       - kb-data:/data
-      # Экспорт Telegram Desktop — только чтение, приложение не меняет оригиналы.
+      # Каталог экспорта — только чтение: приложение не меняет оригиналы.
       - type: bind
-        source: ./mydata/messages.html
-        target: /data/import/messages.html
+        source: ./mydata
+        target: /data/import
         read_only: true
         bind:
           create_host_path: false
