@@ -1,0 +1,35 @@
+minimum_pre_commit_version: "3.7.0"
+
+# Локальные хуки через `uv run`: версии инструментов берутся из uv.lock,
+# поэтому отдельные rev не нужны и не расходятся с CI.
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check --fix --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: mypy
+        name: mypy (src)
+        entry: uv run mypy
+        language: system
+        pass_filenames: false
+        types_or: [python, pyi]
+
+      - id: pytest-unit
+        name: pytest (unit)
+        entry: uv run pytest -q tests/unit
+        language: system
+        pass_filenames: false
+        types_or: [python, pyi]
+        stages: [pre-commit]

@@ -1,0 +1,28 @@
+.git
+.gitignore
+.gitattributes
+.venv
+.env
+.env.*
+!.env.example
+.pre-commit-config.yaml
+
+# Локальные данные и кэши
+data
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.hypothesis
+.coverage
+.coverage.*
+htmlcov
+
+# Не нужны в образе
+docs
+tests
+prompt.md
+messages.html
+*.md
+!README.md

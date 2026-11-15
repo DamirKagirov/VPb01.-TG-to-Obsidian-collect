@@ -1,0 +1,45 @@
+name: kbcollector
+
+services:
+  kbcollector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kbcollector:local
+    init: true
+    restart: unless-stopped
+
+    # .env может отсутствовать на свежем клоне — тогда работают значения по умолчанию.
+    env_file:
+      - path: .env
+        required: false
+
+    environment:
+      KBC_ENV: prod
+      KBC_DATA_DIR: /data
+      KBC_LOG_JSON: "true"
+
+    volumes:
+      - kb-data:/data
+      # Экспорт Telegram Desktop — только чтение, приложение не меняет оригиналы.
+      - type: bind
+        source: ./messages.html
+        target: /data/import/messages.html
+        read_only: true
+        bind:
+          create_host_path: false
+
+    # Этап 0: единственная реализованная команда. На Этапе 3 станет `run`.
+    command: ["doctor"]
+
+    stop_grace_period: 30s
+
+    healthcheck:
+      test: ["CMD", "doctor", "--quiet"]
+      interval: 60s
+      timeout: 20s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  kb-data:
