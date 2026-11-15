@@ -65,6 +65,12 @@ class Settings(BaseSettings):
     llm_model: str | None = None
     llm_timeout_seconds: float = Field(default=60.0, gt=0)
 
+    # ------------------------------------------------------------- Импорт HTML
+    # Каталог экспорта Telegram Desktop и chat_id, к которому он относится:
+    # в самом HTML chat_id отсутствует (см. ADR 0003).
+    html_export_dir: Path | None = None
+    html_chat_id: int | None = None
+
     # ------------------------------------------------------------- Логирование
     log_level: str = "INFO"
     log_json: bool = True
@@ -97,7 +103,31 @@ class Settings(BaseSettings):
     def llm_configured(self) -> bool:
         return self.llm_base_url is not None and self.llm_model is not None
 
+    @property
+    def html_import_configured(self) -> bool:
+        return self.html_export_dir is not None and self.html_chat_id is not None
+
     # ------------------------------------------------------------- Валидация
+    @field_validator(
+        "telegram_bot_token",
+        "s3_endpoint_url",
+        "s3_bucket",
+        "s3_access_key_id",
+        "s3_secret_access_key",
+        "llm_base_url",
+        "llm_api_key",
+        "llm_model",
+        "html_export_dir",
+        "html_chat_id",
+        mode="before",
+    )
+    @classmethod
+    def _empty_to_none(cls, value: object) -> object:
+        """Пустая переменная в `.env` означает «не задано», а не пустую строку."""
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
     @field_validator("telegram_allowed_user_ids", "telegram_allowed_chat_ids", mode="before")
     @classmethod
     def _parse_id_list(cls, value: object) -> object:

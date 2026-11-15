@@ -116,6 +116,9 @@ logs/
 #  Личные данные: экспорт Telegram и исходные материалы не версионируются.
 #  В репозиторий попадают только обезличенные fixtures (tests/fixtures).
 # ==========================================================================
+mydata/
+docs/reports/*.local.json
+docs/reports/*.local.txt
 messages.html
 export/
 exports/

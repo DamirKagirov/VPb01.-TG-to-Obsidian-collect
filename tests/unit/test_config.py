@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
@@ -107,3 +109,33 @@ def test_settings_are_immutable() -> None:
 
     with pytest.raises(ValidationError):
         settings.log_level = "DEBUG"  # type: ignore[misc]
+
+
+def test_empty_env_values_mean_not_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in (
+        "KBC_S3_BUCKET",
+        "KBC_S3_ENDPOINT_URL",
+        "KBC_LLM_BASE_URL",
+        "KBC_LLM_MODEL",
+        "KBC_TELEGRAM_BOT_TOKEN",
+    ):
+        monkeypatch.setenv(name, "")
+
+    settings = make_settings()
+
+    assert settings.s3_bucket is None
+    assert settings.s3_endpoint_url is None
+    assert settings.llm_base_url is None
+    assert settings.llm_model is None
+    assert settings.telegram_bot_token is None
+    assert settings.s3_configured is False
+    assert settings.llm_configured is False
+
+
+def test_html_import_requires_directory_and_chat_id(tmp_path: Path) -> None:
+    assert make_settings().html_import_configured is False
+
+    settings = make_settings(html_export_dir=tmp_path, html_chat_id=366097491)
+
+    assert settings.html_import_configured is True
+    assert settings.html_chat_id == 366097491

@@ -23,7 +23,7 @@ services:
       - kb-data:/data
       # Экспорт Telegram Desktop — только чтение, приложение не меняет оригиналы.
       - type: bind
-        source: ./messages.html
+        source: ./mydata/messages.html
         target: /data/import/messages.html
         read_only: true
         bind:
