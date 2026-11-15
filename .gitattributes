@@ -1,0 +1,66 @@
+# Управление переводами строк: в репозитории — LF, на диске — по ОС.
+* text=auto eol=lf
+
+# Исходный код и документация — всегда LF
+*.py       text eol=lf
+*.pyi      text eol=lf
+*.md       text eol=lf
+*.mdx      text eol=lf
+*.rst      text eol=lf
+*.txt      text eol=lf
+*.toml     text eol=lf
+*.cfg      text eol=lf
+*.ini      text eol=lf
+*.yaml     text eol=lf
+*.yml      text eol=lf
+*.json     text eol=lf
+*.jsonl    text eol=lf
+*.csv      text eol=lf
+*.sql      text eol=lf
+*.jinja    text eol=lf
+*.j2       text eol=lf
+*.sh       text eol=lf
+*.dockerfile text eol=lf
+Dockerfile text eol=lf
+Makefile   text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+LICENSE    text eol=lf
+
+# Windows-скрипты — CRLF
+*.bat      text eol=crlf
+*.cmd      text eol=crlf
+*.ps1      text eol=crlf
+
+# Бинарные файлы — не трогать
+*.png      binary
+*.jpg      binary
+*.jpeg     binary
+*.gif      binary
+*.webp     binary
+*.ico      binary
+*.bmp      binary
+*.pdf      binary
+*.zip      binary
+*.gz       binary
+*.tar      binary
+*.7z       binary
+*.docx     binary
+*.xlsx     binary
+*.pptx     binary
+*.mp3      binary
+*.ogg      binary
+*.opus     binary
+*.m4a      binary
+*.wav      binary
+*.mp4      binary
+*.webm     binary
+*.mov      binary
+*.sqlite   binary
+*.sqlite3  binary
+*.db       binary
+*.woff     binary
+*.woff2    binary
+
+# Явно помечаем как бинарные тестовые вложения (fixtures)
+tests/fixtures/**/*.bin binary

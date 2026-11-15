@@ -6,26 +6,26 @@ __pycache__/
 *$py.class
 *.so
 .Python
-
-# Скомпилированные/кэшированные артефакты
 *.pyo
 *.pyd
 *.pdb
+
+# Сборка и упаковка
+build/
+dist/
+sdist/
+wheels/
 *.egg
 *.egg-info/
 .eggs/
-dist/
-build/
-sdist/
-wheels/
 pip-wheel-metadata/
-*.manifest
-*.spec
 MANIFEST
+*.manifest
 
-# Тестирование / покрытие / типизация / линтеры
+# ==========================================================================
+#  Тестирование / покрытие / типизация / линтеры
+# ==========================================================================
 .pytest_cache/
-.cache/
 .coverage
 .coverage.*
 htmlcov/
@@ -34,14 +34,15 @@ coverage.xml
 .hypothesis/
 .tox/
 .nox/
+.nox-pep8/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+.basedpyright/
 .ruff_cache/
 .pyre/
 .pytype/
 cython_debug/
-profile_default/
 ipython_config.py
 
 # ==========================================================================
@@ -53,30 +54,38 @@ env/
 ENV/
 env.bak/
 venv.bak/
-.python-version
 
 # ==========================================================================
-#  Инструменты упаковки / менеджеры зависимостей
+#  Менеджеры зависимостей
+#  ВАЖНО: lockfile (uv.lock / poetry.lock) коммитится — см. ТЗ, п. 18 и 22.
 # ==========================================================================
-.uv/
-uv.lock
-poetry.lock
-pdm.lock
-Pipfile.lock
+.uv/cache/
+uv-cache/
 pip-log.txt
 pip-delete-this-directory.txt
-*.lock
+.pyenv/
+.nvm/
 
 # ==========================================================================
-#  Jupyter / данные
+#  Runtime-данные приложения (создаются при запуске, не версионируются)
 # ==========================================================================
-.ipynb_checkpoints/
-*.ipynb_checkpoints
-profile_default/
-!requirements.txt
+data/
+var/
+state/
+runtime/
+archive/
+media/
+downloads/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
 
 # ==========================================================================
-#  Переменные окружения и секреты
+#  Секреты и локальная конфигурация
+#  Образцы (.env.example, config.example.yaml) — коммитятся.
 # ==========================================================================
 .env
 .env.*
@@ -84,10 +93,12 @@ profile_default/
 !.env.template
 *.pem
 *.key
-*.crt
 secrets/
+credentials/
 config.local.*
 *.local.json
+*.local.yaml
+*.local.yml
 
 # ==========================================================================
 #  Логи и временные файлы
@@ -100,20 +111,12 @@ logs/
 *.orig
 *.rej
 *~
-.DS_Store
 
 # ==========================================================================
-#  Кэш и артефакты сборки
+#  Jupyter / исследование данных (не часть MVP, но удобно)
 # ==========================================================================
-.cache/
-.caches/
-tmp/
-temp/
-out/
-output/
-artifacts/
-*.zip
-*.tar.gz
+.ipynb_checkpoints/
+*.ipynb_checkpoints
 
 # ==========================================================================
 #  IDE / редакторы
@@ -123,6 +126,7 @@ artifacts/
 !.vscode/settings.json
 !.vscode/extensions.json
 !.vscode/launch.json
+!.vscode/tasks.json
 *.swp
 *.swo
 *.sublime-workspace
@@ -137,10 +141,18 @@ ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
 ._*
+.Spotlight-V100
+.Trashes
+
+# ==========================================================================
+#  Obsidian (в проекте репозиторий — это код, а не vault)
+# ==========================================================================
+.obsidian/
+.trash/
 
 # ==========================================================================
 #  Прочее
 # ==========================================================================
-.DS_Store?
 *.stackdump
 node_modules/
+.vercel/
