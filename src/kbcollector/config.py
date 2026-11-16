@@ -71,6 +71,9 @@ class Settings(BaseSettings):
     html_export_dir: Path | None = None
     html_chat_id: int | None = None
 
+    # ---------------------------------------------------------- Рубрикатор
+    rubricator_path: Path = Path("config/rubricator.yaml")
+
     # ------------------------------------------------------------- Логирование
     log_level: str = "INFO"
     log_json: bool = True

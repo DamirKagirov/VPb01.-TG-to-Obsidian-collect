@@ -15,7 +15,6 @@ from kbcollector.domain.message import NoteDraft
 from kbcollector.markdown.frontmatter import render_frontmatter
 from kbcollector.markdown.sanitize import sanitize_text
 
-SCHEMA_VERSION = 1
 _TOKEN_RE = re.compile(r"\{\{att:([^}]+)\}\}")
 
 
@@ -87,23 +86,24 @@ def _sources_section(draft: NoteDraft) -> list[str]:
 
 
 def render_note(draft: NoteDraft, attachments: list[AttachmentView]) -> str:
-    """Возвращает полный Markdown-файл, готовый к публикации."""
+    """Возвращает полный Markdown-файл, готовый к публикации.
+
+    В front matter остаётся только то, что не дублирует содержимое и путь:
+    `kb_id` (идентичность) и `created_at` (дата материала). `tags` появляются
+    только когда они есть. Остальное (источник, чат, сообщение, категория)
+    уже видно в теле заметки и в её расположении.
+    """
     views = {view.rel_path: view for view in attachments if view.rel_path is not None}
     body_text = sanitize_text(_substitute_tokens(draft.text, views))
 
-    frontmatter = render_frontmatter(
-        {
-            "kb_id": draft.kb_id,
-            "title": draft.title,
-            "source": draft.source_kind,
-            "chat_id": draft.chat_id,
-            "message_id": draft.message_id,
-            "created_at": _iso(draft.created_at),
-            "category": draft.category,
-            "tags": list(draft.tags),
-            "schema_version": SCHEMA_VERSION,
-        }
-    )
+    fields: dict[str, object] = {
+        "kb_id": draft.kb_id,
+        "created_at": _iso(draft.created_at),
+    }
+    if draft.tags:
+        fields["tags"] = list(draft.tags)
+
+    frontmatter = render_frontmatter(fields)
 
     lines = [frontmatter, f"# {draft.title}", ""]
 

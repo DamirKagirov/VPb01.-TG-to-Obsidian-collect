@@ -19,7 +19,7 @@ S3-совместимое хранилище и следит за тем, что
 | 2 | Спайки: S3 ↔ Obsidian, условные записи, offset, ID-сопоставление | **выполнен** (Obsidian и live Telegram — не проверены) |
 | 3 | Вертикальный срез: исходник → заметка с `kb_id` → S3 | **выполнен**: 839 заметок и 117 вложений в vault |
 | 4 | Пакетный импорт, вложения, очередь и retries | не начат |
-| 5 | Рубрикатор, группировка, LLM-обогащение, `Review/` | не начат |
+| 5 | Рубрикатор, группировка, LLM-обогащение, `Review/` | **частично**: рубрикатор и группировка без LLM |
 | 6 | Сверка S3, перемещения, `missing`, конфликты `kb_id` | не начат |
 | 7 | Эксплуатация: диагностика, backup/restore, README | не начат |
 
@@ -78,6 +78,7 @@ cp .env.example .env
 | `kbcollector version` | версия приложения и Python |
 | `kbcollector doctor [--json] [--quiet]` | проверка конфигурации, каталогов, SQLite, часового пояса |
 | `kbcollector import-html [--dry-run] [--limit N] [--path DIR] [--target-prefix P]` | импорт экспорта Telegram в vault и БД |
+| `kbcollector groups [--publish] [--limit N] [--sample N]` | кандидаты на объединение; `--publish` пишет их в `Review/` |
 
 Код возврата `doctor`: `0` — нет ошибок (предупреждения допустимы), `1` — есть проваленные
 проверки, `2` — некорректная конфигурация.
@@ -89,7 +90,13 @@ uv run alembic upgrade head                    # схема БД
 uv run kbcollector import-html --dry-run       # разбор без записи
 uv run kbcollector import-html --limit 10      # пробные 10 сообщений
 uv run kbcollector import-html                 # весь экспорт
+uv run kbcollector groups                      # показать кандидатов на объединение
+uv run kbcollector groups --publish            # предложения в Review/
 ```
+
+Front matter заметки минимальный — только `kb_id` и `created_at`
+(плюс `tags`, когда они появятся); остальные сведения остаются в теле заметки.
+Категории задаются в `config/rubricator.yaml`; по умолчанию всё попадает в `Inbox`.
 
 Команды следующих этапов (`run`, `status`, `retry`, `reprocess`, `reconcile`, `proposals`,
 `restore`, `backup`) появятся вместе с реализацией; их точный синтаксис будет

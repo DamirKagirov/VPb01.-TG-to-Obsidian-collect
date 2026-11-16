@@ -8,6 +8,9 @@ from typing import Literal
 
 AttachmentKind = Literal["photo", "video", "document", "sticker", "audio", "other"]
 
+# Источник: импорт HTML-экспорта. Используется в идентичности сообщений и заметок.
+SOURCE_HTML_EXPORT = "html_export"
+
 # Маркер вложения в тексте: заменяется на Markdown-ссылку после загрузки.
 ATTACHMENT_TOKEN = "{{att:{rel_path}}}"
 

@@ -82,6 +82,13 @@ def _render_stats(stats: ImportStats) -> None:
         ("Вложений не включено в экспорт", str(stats.attachments_not_included)),
         ("Сбоев (будут повторены)", str(stats.failed_messages)),
     ]
+    if stats.by_category:
+        rows.append(
+            (
+                "Категории",
+                ", ".join(f"{name}: {count}" for name, count in stats.by_category.items()),
+            )
+        )
     if stats.sample_path is not None:
         rows.append(("Пример заметки", str(stats.sample_path)))
     if stats.imported_keys:

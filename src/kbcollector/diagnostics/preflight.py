@@ -20,6 +20,7 @@ from enum import StrEnum
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from kbcollector.classification.rubricator import RubricatorError, load_rubricator
 from kbcollector.config import Settings
 
 REQUIRED_PYTHON: tuple[int, int] = (3, 13)
@@ -175,6 +176,27 @@ def _check_s3(settings: Settings) -> Check:
     )
 
 
+def _check_rubricator(settings: Settings) -> Check:
+    path = settings.rubricator_path
+    if not path.is_file():
+        return Check(
+            "rubricator",
+            Severity.WARN,
+            f"{path} не найден — все материалы попадут в Inbox",
+            hint="создайте config/rubricator.yaml или укажите KBC_RUBRICATOR_PATH",
+        )
+    try:
+        rubricator = load_rubricator(path)
+    except RubricatorError as exc:
+        return Check("rubricator", Severity.FAIL, str(exc))
+    return Check(
+        "rubricator",
+        Severity.OK,
+        f"версия {rubricator.version}, default={rubricator.default}, "
+        f"категорий: {len(rubricator.categories)}",
+    )
+
+
 def _check_llm(settings: Settings) -> Check:
     if not settings.llm_configured:
         return Check(
@@ -193,6 +215,7 @@ def run_preflight(settings: Settings) -> list[Check]:
         _check_data_dir(settings),
         _check_sqlite(),
         _check_timezone(settings),
+        _check_rubricator(settings),
         _check_telegram(settings),
         _check_s3(settings),
         _check_llm(settings),

@@ -25,6 +25,15 @@ def make_draft(**overrides: object) -> NoteDraft:
     return NoteDraft(**values)  # type: ignore[arg-type]
 
 
+def _frontmatter(note: str) -> dict[str, object]:
+    import yaml
+
+    block = note.split("---\n", 2)[1]
+    parsed = yaml.safe_load(block)
+    assert isinstance(parsed, dict)
+    return parsed
+
+
 def test_required_sections_and_frontmatter() -> None:
     note = render_note(make_draft(), [])
 
@@ -34,7 +43,22 @@ def test_required_sections_and_frontmatter() -> None:
     assert "## Материалы" in note
     assert "### Сообщение 100" in note
     assert "## Источники" in note
-    assert "chat_id: 42" in note
+    assert "Чат `42`" in note
+
+
+def test_frontmatter_keeps_only_identity_and_date() -> None:
+    frontmatter = _frontmatter(render_note(make_draft(), []))
+
+    assert set(frontmatter) == {"kb_id", "created_at"}
+    assert frontmatter["created_at"] == "2026-01-01T07:00:00Z"
+
+
+def test_tags_appear_only_when_present() -> None:
+    without_tags = _frontmatter(render_note(make_draft(), []))
+    with_tags = _frontmatter(render_note(make_draft(tags=("python",)), []))
+
+    assert "tags" not in without_tags
+    assert with_tags["tags"] == ["python"]
 
 
 def test_no_empty_attachments_section() -> None:

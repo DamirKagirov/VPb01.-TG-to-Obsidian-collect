@@ -17,6 +17,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from kbcollector.archive.raw_store import archive_export
+from kbcollector.classification.rubricator import (
+    Rubricator,
+    RubricatorError,
+    classify,
+    default_rubricator,
+    load_rubricator,
+)
 from kbcollector.config import Settings
 from kbcollector.db.engine import build_engine, build_session_factory
 from kbcollector.db.models import (
@@ -73,6 +80,7 @@ class ImportStats:
     attachments_missing: int = 0
     attachments_not_included: int = 0
     failed_messages: int = 0
+    by_category: dict[str, int] = field(default_factory=dict)
     failures: list[str] = field(default_factory=list)
     sample_path: Path | None = None
     imported_keys: list[str] = field(default_factory=list)
@@ -98,12 +106,13 @@ def build_plan(
     chat_id: int,
     export_root: Path,
     layout: VaultLayout,
+    category: str = INBOX_CATEGORY,
 ) -> NotePlan:
     """Готовит заметку без побочных эффектов."""
     kb_id = kb_id_for(SOURCE_KIND, chat_id, message.message_id)
     title = derive_title(message.text, message.attachments, message.message_id)
     filename = note_filename(title, kb_id)
-    note_key = layout.note_key(INBOX_CATEGORY, filename)
+    note_key = layout.note_key(category, filename)
 
     prepared = tuple(
         prepare_attachment(
@@ -141,7 +150,7 @@ def build_plan(
     draft = NoteDraft(
         kb_id=kb_id,
         title=title,
-        category=INBOX_CATEGORY,
+        category=category,
         created_at=message.sent_at,
         source_kind=SOURCE_KIND,
         chat_id=chat_id,
@@ -302,6 +311,11 @@ def run_import(
     vault = VaultLayout(target_prefix or settings.s3_vault_prefix)
     chat_id = settings.html_chat_id
 
+    try:
+        rubricator = _load_rubricator(settings)
+    except RubricatorError as exc:
+        raise HtmlImportError(str(exc)) from exc
+
     stats = ImportStats(dry_run=dry_run, target_prefix=vault.vault_prefix, pages=len(layout.pages))
 
     active_store: S3Store | None = store
@@ -337,11 +351,15 @@ def run_import(
             stats.skipped_commands += 1
             continue
 
+        category = classify(message.text, rubricator)
+        stats.by_category[category] = stats.by_category.get(category, 0) + 1
+
         plan = build_plan(
             message,
             chat_id=chat_id,
             export_root=layout.root,
             layout=vault,
+            category=category,
         )
 
         if dry_run:
@@ -427,6 +445,15 @@ def run_import(
     return stats
 
 
+def _load_rubricator(settings: Settings) -> Rubricator:
+    """Загружает рубрикатор; отсутствие файла — не ошибка (всё идёт в Inbox)."""
+    path = settings.rubricator_path
+    if not path.is_file():
+        logger.warning("rubricator_missing", path=str(path))
+        return default_rubricator()
+    return load_rubricator(path)
+
+
 def _finish_source(
     session_factory: sessionmaker[Session] | None,
     source_id: str | None,
@@ -443,6 +470,7 @@ def _finish_source(
             {
                 "parsed": stats.parsed,
                 "skipped_commands": stats.skipped_commands,
+                "by_category": stats.by_category,
                 "notes_created": stats.notes_created,
                 "notes_skipped": stats.notes_skipped,
                 "attachments_uploaded": stats.attachments_uploaded,
