@@ -1,4 +1,4 @@
-﻿"""Разбор HTML-экспорта на обезличенных fixtures."""
+"""Разбор HTML-экспорта на обезличенных fixtures."""
 
 from __future__ import annotations
 

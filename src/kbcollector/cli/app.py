@@ -13,6 +13,7 @@ import typer
 from rich.table import Table
 
 from kbcollector import __version__
+from kbcollector.cli.commands.enrich import enrich
 from kbcollector.cli.commands.groups import groups
 from kbcollector.cli.commands.import_html import import_html
 from kbcollector.cli.runtime import console, load_settings
@@ -75,6 +76,7 @@ def doctor(
 
 app.command("import-html")(import_html)
 app.command("groups")(groups)
+app.command("enrich")(enrich)
 
 
 def _render_checks(checks: list[Check]) -> None:

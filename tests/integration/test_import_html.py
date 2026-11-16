@@ -31,11 +31,11 @@ class FakeS3Client:
     def put_object(
         self,
         *,
-        Bucket: str,  # noqa: N803 - имена параметров boto3
-        Key: str,  # noqa: N803
-        Body: bytes,  # noqa: N803
-        ContentType: str | None = None,  # noqa: N803
-        IfNoneMatch: str | None = None,  # noqa: N803
+        Bucket: str,
+        Key: str,
+        Body: bytes,
+        ContentType: str | None = None,
+        IfNoneMatch: str | None = None,
     ) -> dict[str, str]:
         if IfNoneMatch == "*" and Key in self.objects:
             raise ClientError(
@@ -49,7 +49,7 @@ class FakeS3Client:
         self.content_types[Key] = ContentType or ""
         return {"ETag": f'"{hashlib.md5(Body).hexdigest()}"'}
 
-    def head_object(self, *, Bucket: str, Key: str) -> dict[str, object]:  # noqa: N803
+    def head_object(self, *, Bucket: str, Key: str) -> dict[str, object]:
         if Key not in self.objects:
             raise ClientError(
                 {

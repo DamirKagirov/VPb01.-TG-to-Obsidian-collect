@@ -33,9 +33,14 @@ class Rubricator:
     version: int
     default: str
     rules: tuple[Rule, ...]
+    # Явный список допустимых категорий (например, темы для LLM).
+    # Если пуст — используются default и категории правил.
+    allowed: tuple[str, ...] = ()
 
     @property
     def categories(self) -> tuple[str, ...]:
+        if self.allowed:
+            return self.allowed
         return (self.default, *(rule.category for rule in self.rules))
 
 
@@ -94,7 +99,22 @@ def parse_rubricator(data: dict[str, Any]) -> Rubricator:
         keywords = tuple(item.strip().casefold() for item in keywords_raw)
         rules.append(Rule(category=category, any_keywords=keywords))
 
-    return Rubricator(version=version, default=default, rules=tuple(rules))
+    raw_allowed = data.get("categories", [])
+    allowed: list[str] = []
+    if raw_allowed:
+        if not isinstance(raw_allowed, list):
+            msg = "rubricator.categories должен быть списком"
+            raise RubricatorError(msg)
+        for index, item in enumerate(raw_allowed):
+            category = _validate_category(item, where=f"rubricator.categories[{index}]")
+            if category in allowed:
+                msg = f"rubricator.categories: дублируется {category}"
+                raise RubricatorError(msg)
+            allowed.append(category)
+        if default not in allowed:
+            allowed.insert(0, default)
+
+    return Rubricator(version=version, default=default, rules=tuple(rules), allowed=tuple(allowed))
 
 
 def load_rubricator(path: Path) -> Rubricator:
@@ -124,4 +144,4 @@ def classify(text: str, rubricator: Rubricator) -> str:
 
 
 def default_rubricator() -> Rubricator:
-    return Rubricator(version=1, default="Inbox", rules=())
+    return Rubricator(version=1, default="Inbox", rules=(), allowed=("Inbox",))

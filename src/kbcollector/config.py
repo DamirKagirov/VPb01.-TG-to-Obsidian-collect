@@ -64,6 +64,12 @@ class Settings(BaseSettings):
     llm_api_key: SecretStr | None = None
     llm_model: str | None = None
     llm_timeout_seconds: float = Field(default=60.0, gt=0)
+    llm_prompt_version: str = "v1"
+    # Отправка текста сообщений внешнему провайдеру выключена по умолчанию.
+    llm_send_content: bool = False
+    llm_budget_tokens: int = Field(default=700_000, ge=0)
+    llm_max_input_chars: int = Field(default=6000, ge=500)
+    prompt_dir: Path = Path("config/prompts")
 
     # ------------------------------------------------------------- Импорт HTML
     # Каталог экспорта Telegram Desktop и chat_id, к которому он относится:

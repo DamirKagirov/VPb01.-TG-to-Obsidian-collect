@@ -7,6 +7,7 @@ from datetime import datetime
 from sqlalchemy import (
     BigInteger,
     DateTime,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -156,3 +157,26 @@ class Meta(Base):
 
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
     value: Mapped[str] = mapped_column(Text, default="")
+
+
+class Generation(Base):
+    """Результат LLM-обогащения и одновременно кэш по `input_hash`."""
+
+    __tablename__ = "generations"
+    __table_args__ = (UniqueConstraint("input_hash", name="uq_generation_input"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    source_kind: Mapped[str] = mapped_column(String(32))
+    chat_id: Mapped[int] = mapped_column(BigInteger)
+    message_id: Mapped[int] = mapped_column(BigInteger)
+    prompt_version: Mapped[str] = mapped_column(String(32))
+    model: Mapped[str] = mapped_column(String(80))
+    params_json: Mapped[str] = mapped_column(Text, default="{}")
+    input_hash: Mapped[str] = mapped_column(String(64))
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cost_usd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    output_json: Mapped[str] = mapped_column(Text, default="{}")
+    status: Mapped[str] = mapped_column(String(16), default="ok")
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

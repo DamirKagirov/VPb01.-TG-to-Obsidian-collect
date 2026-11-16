@@ -1,4 +1,4 @@
-﻿"""Раскладка объектов в bucket (ADR 0005).
+"""Раскладка объектов в bucket (ADR 0005).
 
 `vault/Telegram/<Категория>/<файл>.md`
 `vault/Attachments/Telegram/<attachment_id>/<файл>`
