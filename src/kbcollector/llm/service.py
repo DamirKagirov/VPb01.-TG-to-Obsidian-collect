@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -51,6 +52,11 @@ logger = get_logger(__name__)
 
 DEFAULT_LIMIT = 50
 _SAMPLE_COUNT = 3
+# S3-провайдер рвёт соединения при плотном потоке запросов: публикуем с паузой
+# и повторяем сетевые сбои (запись идемпотентна благодаря If-None-Match).
+_PROPOSAL_PAUSE_SECONDS = 0.2
+_PROPOSAL_ATTEMPTS = 3
+_PROPOSAL_RETRY_SECONDS = 1.0
 
 
 class EnrichmentSetupError(RuntimeError):
@@ -303,6 +309,7 @@ def run_enrich(
                     prompt_hash=prompt_hash,
                     stats=stats,
                 )
+                time.sleep(_PROPOSAL_PAUSE_SECONDS)
 
         session.commit()
 
@@ -389,17 +396,23 @@ def _publish_proposal(
         base_sha256=row.note_sha256,
         current_title=row.note_title,
     )
-    try:
-        created = store.put_if_absent(key, body.encode("utf-8"), "text/markdown; charset=utf-8")
-    except S3Error as exc:
-        stats.errors += 1
-        if len(stats.failures) < 20:
-            stats.failures.append(f"{row.message_id}: {exc}")
+    payload = body.encode("utf-8")
+    for attempt in range(1, _PROPOSAL_ATTEMPTS + 1):
+        try:
+            created = store.put_if_absent(key, payload, "text/markdown; charset=utf-8")
+        except S3Error as exc:
+            if attempt < _PROPOSAL_ATTEMPTS:
+                time.sleep(_PROPOSAL_RETRY_SECONDS * attempt)
+                continue
+            stats.errors += 1
+            if len(stats.failures) < 20:
+                stats.failures.append(f"{row.message_id}: {exc}")
+            return
+        if created is None:
+            stats.proposals_existing += 1
+        else:
+            stats.proposals_created += 1
         return
-    if created is None:
-        stats.proposals_existing += 1
-    else:
-        stats.proposals_created += 1
 
 
 def prompt_path(settings: Settings) -> Path:

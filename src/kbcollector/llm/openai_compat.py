@@ -83,7 +83,7 @@ class OpenAICompatibleProvider:
         *,
         system: str,
         user: str,
-        max_tokens: int = 400,
+        max_tokens: int = 800,
     ) -> ChatResult:
         body: dict[str, Any] = {
             "model": self._model,
@@ -127,14 +127,17 @@ class OpenAICompatibleProvider:
                 msg = "в ответе модели нет choices[0].message.content"
                 raise LLMError(msg) from exc
 
+            finish = str(payload["choices"][0].get("finish_reason"))
+            usage = payload.get("usage") or {}
+            # Ответ мог быть обрезан лимитом max_tokens: такой JSON невалиден,
+            # поэтому повторяем запрос с запасом, а не «чиним» ответ.
+            if finish == "length" and int(body["max_tokens"]) < 2000:
+                body["max_tokens"] = 2000
+                last_error = "ответ обрезан по лимиту токенов, повтор с большим лимитом"
+                continue
+
             if not content.strip():
-                finish = str(payload["choices"][0].get("finish_reason"))
-                usage = payload.get("usage") or {}
                 # Reasoning-модель могла израсходовать лимит на размышления.
-                if finish == "length" and int(body["max_tokens"]) < 2000:
-                    body["max_tokens"] = 2000
-                    last_error = "пустой ответ при finish_reason=length, повтор с большим лимитом"
-                    continue
                 msg = (
                     "модель вернула пустой ответ "
                     f"(finish_reason={finish}, completion_tokens={usage.get('completion_tokens')})"

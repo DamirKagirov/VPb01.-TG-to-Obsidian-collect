@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 import respx
@@ -83,6 +85,38 @@ def test_retry_on_429_then_success() -> None:
 
     assert result.content == "{}"
     assert route.call_count == 2
+
+
+@respx.mock
+def test_truncated_json_is_retried_with_larger_limit() -> None:
+    route = respx.post(URL)
+    route.side_effect = [
+        httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {"message": {"content": '{"title": "T'}, "finish_reason": "length"}
+                ],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 800},
+            },
+        ),
+        httpx.Response(
+            200,
+            json={
+                "choices": [
+                    {"message": {"content": '{"title": "T"}'}, "finish_reason": "stop"}
+                ],
+                "usage": {"prompt_tokens": 100, "completion_tokens": 20},
+            },
+        ),
+    ]
+
+    result = make_provider().complete_json(system="s", user="u")
+
+    assert result.content == '{"title": "T"}'
+    assert route.call_count == 2
+    second = json.loads(route.calls[1].request.content)
+    assert second["max_tokens"] == 2000
 
 
 def test_parse_json_object_rejects_non_object() -> None:

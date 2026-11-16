@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, ConnectionClosedError
 from sqlalchemy import func, select
 
 from kbcollector.config import Settings
@@ -70,6 +70,20 @@ class FakeS3Client:
                 "HeadObject",
             )
         return {"ETag": '"etag"', "ContentLength": len(self.objects[Key])}
+
+
+class FlakyS3Client(FakeS3Client):
+    """Один сетевой сбой при записи, затем успех (проверка повтора)."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.failures_left = 1
+
+    def put_object(self, **kwargs: object) -> dict[str, str]:
+        if self.failures_left:
+            self.failures_left -= 1
+            raise ConnectionClosedError(endpoint_url="https://s3.test")
+        return super().put_object(**kwargs)  # type: ignore[arg-type]
 
 
 def make_settings(tmp_path: Path, **overrides: object) -> Settings:
@@ -195,6 +209,27 @@ def test_proposals_are_published_to_review(tmp_path: Path) -> None:
     assert "Предложение обогащения" in body
     assert "не применено автоматически" in body
     assert "Настройка n8n" in body
+
+
+def test_proposal_publication_retries_network_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    settings = make_settings(tmp_path)
+    seed_notes(settings)
+    fake = FlakyS3Client()
+    monkeypatch.setattr("kbcollector.llm.service.time.sleep", lambda _: None)
+
+    stats = run_enrich(
+        settings,
+        limit=2,
+        propose=True,
+        provider=FakeProvider(),
+        store=S3Store(fake, "bucket"),  # type: ignore[arg-type]
+    )
+
+    assert stats.errors == 0
+    assert stats.proposals_created == 2
+    assert fake.failures_left == 0
 
 
 def test_dry_run_publishes_nothing(tmp_path: Path) -> None:
