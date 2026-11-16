@@ -1,4 +1,4 @@
-"""Идентификаторы: стабильность и детерминированность."""
+﻿"""Идентификаторы: стабильность и детерминированность."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from kbcollector.domain.ids import (
 
 
 def test_kb_id_is_stable_for_same_source_message() -> None:
-    first = kb_id_for("html_export", 366097491, 143053)
-    second = kb_id_for("html_export", 366097491, 143053)
+    first = kb_id_for("html_export", 100000001, 123456)
+    second = kb_id_for("html_export", 100000001, 123456)
 
     assert first == second
     assert first.startswith("note_")

@@ -1,4 +1,4 @@
-"""Разбор HTML-экспорта на обезличенных fixtures."""
+﻿"""Разбор HTML-экспорта на обезличенных fixtures."""
 
 from __future__ import annotations
 
@@ -174,7 +174,7 @@ def test_discover_finds_nested_export_directory(tmp_path: Path) -> None:
     [
         ("/start", True),
         ("  /help  ", True),
-        ("/start@kdr_obsidian_bot", True),
+        ("/start@example_bot", True),
         ("`/start`", True),
         ("/start и обычный текст", False),
         ("команда /start", False),

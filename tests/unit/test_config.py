@@ -1,4 +1,4 @@
-"""Тесты настроек: приоритет источников, валидация, производные пути."""
+﻿"""Тесты настроек: приоритет источников, валидация, производные пути."""
 
 from __future__ import annotations
 
@@ -135,7 +135,7 @@ def test_empty_env_values_mean_not_configured(monkeypatch: pytest.MonkeyPatch) -
 def test_html_import_requires_directory_and_chat_id(tmp_path: Path) -> None:
     assert make_settings().html_import_configured is False
 
-    settings = make_settings(html_export_dir=tmp_path, html_chat_id=366097491)
+    settings = make_settings(html_export_dir=tmp_path, html_chat_id=100000001)
 
     assert settings.html_import_configured is True
-    assert settings.html_chat_id == 366097491
+    assert settings.html_chat_id == 100000001

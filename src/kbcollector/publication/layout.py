@@ -1,7 +1,7 @@
-"""Раскладка объектов в bucket (ADR 0005).
+﻿"""Раскладка объектов в bucket (ADR 0005).
 
-`vault4-kb01/Telegram/<Категория>/<файл>.md`
-`vault4-kb01/Attachments/Telegram/<attachment_id>/<файл>`
+`vault/Telegram/<Категория>/<файл>.md`
+`vault/Attachments/Telegram/<attachment_id>/<файл>`
 
 Ссылки в заметке — относительные, вычисляются от пути заметки, чтобы перемещение
 папки внутри vault не ломало их (ТЗ §11.3).
