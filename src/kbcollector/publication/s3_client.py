@@ -79,6 +79,9 @@ class S3Store:
                 return None
             msg = f"не удалось записать {key}: {code or exc}"
             raise S3Error(msg) from exc
+        except BotoCoreError as exc:
+            msg = f"не удалось записать {key}: {exc}"
+            raise S3Error(msg) from exc
         stat = self.head(key)
         if stat is None:
             msg = f"объект {key} записан, но не читается через HEAD"
@@ -107,11 +110,29 @@ class S3Store:
                 return None
             msg = f"HEAD {key} не удался: {_error_code(exc) or exc}"
             raise S3Error(msg) from exc
+        except BotoCoreError as exc:
+            msg = f"HEAD {key} не удался: {exc}"
+            raise S3Error(msg) from exc
         return ObjectStat(
             key=key,
             etag=str(response.get("ETag", "")).strip('"'),
             size=int(response.get("ContentLength", 0)),
         )
+
+    def get_bytes(self, key: str) -> bytes | None:
+        """Содержимое объекта или `None`, если объекта нет."""
+        try:
+            response = self._client.get_object(Bucket=self.bucket, Key=key)
+        except ClientError as exc:
+            if _error_code(exc) in _NOT_FOUND_CODES or _http_status(exc) == "404":
+                return None
+            msg = f"GET {key} не удался: {_error_code(exc) or exc}"
+            raise S3Error(msg) from exc
+        except BotoCoreError as exc:
+            msg = f"GET {key} не удался: {exc}"
+            raise S3Error(msg) from exc
+        data = response["Body"].read()
+        return bytes(data)
 
     def delete(self, key: str) -> None:
         try:
@@ -139,7 +160,7 @@ def build_s3_client(settings: Settings) -> Any:  # boto3-клиент
         config=Config(
             signature_version="s3v4",
             s3={"addressing_style": "path"},
-            retries={"max_attempts": 3, "mode": "standard"},
+            retries={"max_attempts": 10, "mode": "standard"},
             connect_timeout=10,
             read_timeout=60,
         ),

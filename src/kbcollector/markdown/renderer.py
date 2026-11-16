@@ -35,6 +35,13 @@ def _iso(moment: datetime) -> str:
     return moment.astimezone(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
+def _link_target(target: str) -> str:
+    """Markdown-ссылки с пробелами или скобками требуют обрамления `<>`."""
+    if any(char in target for char in " ()<>"):
+        return f"<{target}>"
+    return target
+
+
 def _substitute_tokens(text: str, views: dict[str, AttachmentView]) -> str:
     def replace(match: re.Match[str]) -> str:
         view = views.get(match.group(1))
@@ -42,7 +49,7 @@ def _substitute_tokens(text: str, views: dict[str, AttachmentView]) -> str:
             return ""
         if view.link is None:
             return f"«{view.original_name}» (файл отсутствует)"
-        return f"[{view.original_name}]({view.link})"
+        return f"[{view.original_name}]({_link_target(view.link)})"
 
     return _TOKEN_RE.sub(replace, text)
 
@@ -57,7 +64,7 @@ def _attachments_section(views: list[AttachmentView]) -> list[str]:
             reason = view.problem or "файл отсутствует в экспорте"
             lines.append(f"- `{view.original_name}`{suffix} — {reason}")
         else:
-            lines.append(f"- [{view.original_name}]({view.link}){suffix}")
+            lines.append(f"- [{view.original_name}]({_link_target(view.link)}){suffix}")
     lines.append("")
     return lines
 

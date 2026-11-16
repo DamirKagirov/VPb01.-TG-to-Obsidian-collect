@@ -43,7 +43,7 @@ from kbcollector.publication.publisher import (
     prepare_attachment,
     publish_note,
 )
-from kbcollector.publication.s3_client import S3Store
+from kbcollector.publication.s3_client import S3Error, S3Store
 
 logger = get_logger(__name__)
 
@@ -72,6 +72,8 @@ class ImportStats:
     attachments_existing: int = 0
     attachments_missing: int = 0
     attachments_not_included: int = 0
+    failed_messages: int = 0
+    failures: list[str] = field(default_factory=list)
     sample_path: Path | None = None
     imported_keys: list[str] = field(default_factory=list)
 
@@ -365,42 +367,56 @@ def run_import(
                 stats.notes_skipped += 1
                 continue
 
-            outcome = publish_note(
-                note_key=plan.note_key,
-                note_text=plan.note_text,
-                attachments=list(plan.attachments),
-                layout=vault,
-                store=active_store,
-            )
-            etag = outcome.note_stat.etag if outcome.note_stat is not None else None
-            if outcome.created:
-                stats.notes_created += 1
-                stats.imported_keys.append(outcome.note_key)
-            else:
-                stats.notes_already_present += 1
-                if etag is None:
-                    existing = active_store.head(outcome.note_key)
-                    etag = existing.etag if existing else None
+            try:
+                outcome = publish_note(
+                    note_key=plan.note_key,
+                    note_text=plan.note_text,
+                    attachments=list(plan.attachments),
+                    layout=vault,
+                    store=active_store,
+                )
+                etag = outcome.note_stat.etag if outcome.note_stat is not None else None
+                if outcome.created:
+                    stats.notes_created += 1
+                    stats.imported_keys.append(outcome.note_key)
+                else:
+                    stats.notes_already_present += 1
+                    if etag is None:
+                        existing = active_store.head(outcome.note_key)
+                        etag = existing.etag if existing else None
 
-            stats.attachments_uploaded += outcome.uploaded
-            stats.attachments_existing += outcome.existing
-            stats.attachments_not_included += sum(
-                1 for item in plan.attachments if item.status == STATUS_NOT_INCLUDED
-            )
-            stats.attachments_missing += sum(
-                1 for item in plan.attachments if item.status == STATUS_MISSING
-            )
+                stats.attachments_uploaded += outcome.uploaded
+                stats.attachments_existing += outcome.existing
+                stats.attachments_not_included += sum(
+                    1 for item in plan.attachments if item.status == STATUS_NOT_INCLUDED
+                )
+                stats.attachments_missing += sum(
+                    1 for item in plan.attachments if item.status == STATUS_MISSING
+                )
 
-            raw = _store_raw_message(session, message, chat_id=chat_id)
-            _store_note(
-                session,
-                plan,
-                raw=raw,
-                note_key=outcome.note_key,
-                etag=etag,
-                layout=vault,
-            )
-            session.commit()
+                raw = _store_raw_message(session, message, chat_id=chat_id)
+                _store_note(
+                    session,
+                    plan,
+                    raw=raw,
+                    note_key=outcome.note_key,
+                    etag=etag,
+                    layout=vault,
+                )
+                session.commit()
+            except (S3Error, OSError) as exc:
+                # Сбой сети или хранилища не должен обрывать пакетный импорт:
+                # сообщение останется необработанным и будет повторено при следующем запуске.
+                session.rollback()
+                stats.failed_messages += 1
+                if len(stats.failures) < 20:
+                    stats.failures.append(f"сообщение {message.message_id}: {exc}")
+                logger.warning(
+                    "import_message_failed",
+                    message_id=message.message_id,
+                    error=str(exc),
+                )
+                continue
 
         if stats.parsed % 100 == 0:
             logger.info("import_progress", parsed=stats.parsed, created=stats.notes_created)

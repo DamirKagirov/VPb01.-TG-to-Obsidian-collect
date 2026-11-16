@@ -80,6 +80,7 @@ def _render_stats(stats: ImportStats) -> None:
         ("Вложений уже было", str(stats.attachments_existing)),
         ("Вложений отсутствует", str(stats.attachments_missing)),
         ("Вложений не включено в экспорт", str(stats.attachments_not_included)),
+        ("Сбоев (будут повторены)", str(stats.failed_messages)),
     ]
     if stats.sample_path is not None:
         rows.append(("Пример заметки", str(stats.sample_path)))
@@ -88,6 +89,8 @@ def _render_stats(stats: ImportStats) -> None:
         if len(stats.imported_keys) > 5:
             preview += f"\n… ещё {len(stats.imported_keys) - 5}"
         rows.append(("Новые ключи", preview))
+    if stats.failures:
+        rows.append(("Ошибки", "\n".join(stats.failures[:5])))
 
     for name, value in rows:
         table.add_row(name, value)
@@ -96,3 +99,9 @@ def _render_stats(stats: ImportStats) -> None:
 
     if stats.dry_run:
         console.print("[yellow]dry-run: в БД и S3 ничего не записано[/yellow]")
+    if stats.failed_messages:
+        console.print(
+            f"[yellow]Сбоев: {stats.failed_messages}. "
+            "Повторите запуск — обработанные сообщения будут пропущены.[/yellow]"
+        )
+        raise typer.Exit(code=1)

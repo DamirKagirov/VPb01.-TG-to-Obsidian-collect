@@ -72,6 +72,21 @@ def test_attachment_link_and_missing_marker() -> None:
     assert "файл не включён в экспорт Telegram" in note
 
 
+def test_attachment_link_with_spaces_and_parentheses_is_wrapped() -> None:
+    draft = make_draft()
+    views = [
+        AttachmentView(
+            rel_path="stickers/AnimatedSticker (2).tgs",
+            original_name="AnimatedSticker (2).tgs",
+            link="../../Attachments/Telegram/att_x/AnimatedSticker (2).tgs",
+        )
+    ]
+
+    note = render_note(draft, views)
+
+    assert "](" + "<../../Attachments/Telegram/att_x/AnimatedSticker (2).tgs>" + ")" in note
+
+
 def test_inline_attachment_token_is_replaced() -> None:
     draft = make_draft(text="Смотри {{att:photos/a.jpg}} тут")
     views = [
