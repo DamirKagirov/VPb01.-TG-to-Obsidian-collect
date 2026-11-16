@@ -119,6 +119,7 @@ config.local.*
 #  В репозиторий попадают только обезличенные fixtures (tests/fixtures).
 # ==========================================================================
 mydata/
+docs/
 docs/reports/*.local.json
 docs/reports/*.local.txt
 messages.html
