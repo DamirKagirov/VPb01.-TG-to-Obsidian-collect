@@ -97,7 +97,7 @@ def _render_stats(stats: EnrichmentStats) -> None:
         for sample in stats.samples:
             tags = ", ".join(str(item) for item in cast("list[object]", sample.get("tags") or []))
             console.print(
-                f"  • `{sample['message_id']}` → {sample['title']} "
+                f"  • `{sample['message_id']}` -> {sample['title']} "
                 f"[{sample['category']}, {sample['confidence']:.2f}] {tags}"
             )
 
