@@ -73,6 +73,7 @@ def _render_stats(stats: EnrichmentStats) -> None:
     rows = [
         ("Лимит заметок", str(stats.limit)),
         ("Обработано", str(stats.processed)),
+        ("Пропущено без текста", str(stats.skipped_empty)),
         ("Из кэша", str(stats.cached)),
         ("Запросов к модели", str(stats.requested)),
         ("Входных токенов", str(stats.input_tokens)),

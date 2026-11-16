@@ -70,6 +70,7 @@ class EnrichmentStats:
     input_tokens: int = 0
     output_tokens: int = 0
     errors: int = 0
+    skipped_empty: int = 0
     budget_exhausted: bool = False
     proposals_created: int = 0
     proposals_existing: int = 0
@@ -252,9 +253,8 @@ def run_enrich(
             stats.processed += 1
             text = row.text.strip()
             if not text:
-                stats.errors += 1
-                if len(stats.failures) < 20:
-                    stats.failures.append(f"{row.message_id}: пустой текст")
+                # Медиа без подписи: классифицировать нечего, это не ошибка.
+                stats.skipped_empty += 1
                 continue
 
             if len(text) > settings.llm_max_input_chars:

@@ -130,6 +130,11 @@ class OpenAICompatibleProvider:
             if not content.strip():
                 finish = str(payload["choices"][0].get("finish_reason"))
                 usage = payload.get("usage") or {}
+                # Reasoning-модель могла израсходовать лимит на размышления.
+                if finish == "length" and int(body["max_tokens"]) < 2000:
+                    body["max_tokens"] = 2000
+                    last_error = "пустой ответ при finish_reason=length, повтор с большим лимитом"
+                    continue
                 msg = (
                     "модель вернула пустой ответ "
                     f"(finish_reason={finish}, completion_tokens={usage.get('completion_tokens')})"

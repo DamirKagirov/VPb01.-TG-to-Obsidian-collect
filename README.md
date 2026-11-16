@@ -80,6 +80,7 @@ cp .env.example .env
 | `kbcollector doctor [--json] [--quiet]` | проверка конфигурации, каталогов, SQLite, часового пояса |
 | `kbcollector import-html [--dry-run] [--limit N] [--path DIR] [--target-prefix P]` | импорт экспорта Telegram в vault и БД |
 | `kbcollector groups [--publish] [--limit N] [--sample N]` | кандидаты на объединение; `--publish` пишет их в `Review/` |
+| `kbcollector enrich [--limit N] [--dry-run] [--propose] [--budget-tokens N]` | LLM-обогащение существующих заметок: заголовок, категория, теги → предложения в `Review/` |
 
 Код возврата `doctor`: `0` — нет ошибок (предупреждения допустимы), `1` — есть проваленные
 проверки, `2` — некорректная конфигурация.
