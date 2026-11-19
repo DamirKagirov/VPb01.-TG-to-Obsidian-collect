@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-11-15T22:29:51.351821+00:00",
+  "endpoint": "https://s3.ru-7.storage.selcloud.ru",
+  "bucket": "obsidian-kb01",
+  "vault_prefix": "vault4-kb01/",
+  "results": [
+    {
+      "check": "bucket_access",
+      "status": "passed",
+      "detail": "bucket=obsidian-kb01 доступен"
+    },
+    {
+      "check": "put_unicode_key",
+      "status": "passed",
+      "detail": "создан объект '_spike/973a26bd65df48e7b59d0fe0c4200796/Тест/Кириллица и emoji 🚀.md'"
+    },
+    {
+      "check": "get_roundtrip",
+      "status": "passed",
+      "detail": "содержимое совпадает побайтово"
+    },
+    {
+      "check": "etag_is_md5",
+      "status": "passed",
+      "detail": "ETag = MD5 (fa190d84…)"
+    },
+    {
+      "check": "list_delimiter_unicode",
+      "status": "passed",
+      "detail": "CommonPrefixes=['_spike/973a26bd65df48e7b59d0fe0c4200796/Тест/']"
+    },
+    {
+      "check": "if_none_match_supported",
+      "status": "passed",
+      "detail": "412 PreconditionFailed"
+    },
+    {
+      "check": "if_match_supported",
+      "status": "passed",
+      "detail": "условная замена с актуальным ETag"
+    },
+    {
+      "check": "if_match_rejects_stale",
+      "status": "passed",
+      "detail": "412 PreconditionFailed"
+    },
+    {
+      "check": "rename_copy_delete",
+      "status": "passed",
+      "detail": "copy+delete сохраняет содержимое"
+    },
+    {
+      "check": "bucket_versioning",
+      "status": "passed",
+      "detail": "Status=NotEnabled"
+    },
+    {
+      "check": "cleanup",
+      "status": "passed",
+      "detail": "удалено объектов: 1"
+    }
+  ]
+}
